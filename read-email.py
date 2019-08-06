@@ -46,7 +46,7 @@ def etl_data(server):
     # If there's no header, write headers
     if os.stat(outputFilename).st_size == 0:
         info_sheet.write("CAD,Address,City,Type of Incident,ID,ID2\n")
-    
+
     result, data = server.uid('search', None, searchQuery)
     message_list = data[0].split()
     i = len(message_list)
