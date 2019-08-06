@@ -17,11 +17,11 @@ def login_and_write():
     imapserver = imaplib.IMAP4(host=secrets.townIMAPServer,port=143)
     imapserver.starttls()
     print("Connecting...")
-    try: 
+    try:
         # Login via secrets credentials
         imapserver.login(secrets.opendatausername,secrets.opendatapassword)
-        print("Connected.") 
-    except: 
+        print("Connected.")
+    except:
         print("Not connected.")
     # Return server
     return imapserver
@@ -53,7 +53,7 @@ try:
 
         # downloading attachments
         for part in email_message.walk():
-            # this part comes from the snipped I don't understand yet... 
+            # this part comes from the snipped I don't understand yet...
             if part.get_content_maintype() == 'multipart':
                 continue
             if part.get('Content-Disposition') is None:

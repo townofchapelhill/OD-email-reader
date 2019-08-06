@@ -123,7 +123,7 @@ def etl_data(server):
             csv_line[mapping_keys[key]] = result_dict[key]
         
         pprint.pprint(csv_line)
-    
+
         info_sheet.write(csv_line.values() + '\n')
     # Close CSV being used
     # Call cleanup_csv function using dates list

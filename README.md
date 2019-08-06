@@ -21,6 +21,9 @@ Uses imapclient and email modules
 Powershell script
 
 ### Transformations
+#### csv_file_dedup.ps1
+sorts and dedups a csv file. Input, Output, and sort field specified as parameters
+
 #### read-email.py
 reads emails from INBOX of odsuser
 
