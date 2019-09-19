@@ -26,7 +26,7 @@ def IMAP_login():
         imapserver.login(secrets.odsuser,secrets.odspass)
         print("Connected.")
     except:
-        raise NameError('IMAP connection Failed")
+        raise NameError('IMAP connection Failed')
     return imapserver
 
 
@@ -37,12 +37,12 @@ def etl_data(server):
     # Create Path to staging directory
     stagingPath = pathlib.Path(filename_secrets.productionStaging)
     # Open csv
-    outputFilename = stagingPath.joinpath('fire_dept_raw_dispatches.csv')
+    outputFilename = stagingPath.joinpath('fire_dept_raw_dispatches_test.csv')
     info_sheet = open(outputFilename, 'w')
     # Selects inbox as target
     server.select(mailbox='Inbox')
     # Select emails since yesterday
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    yesterday = datetime.date.today() - datetime.timedelta(days=7)
     searchQuery = '(FROM "Orange Co EMS Dispatch" SINCE "' + yesterday.strftime('%d-%b-%Y') + '")'
     # If there's no header, write headers
     if os.stat(outputFilename).st_size == 0:
@@ -51,7 +51,7 @@ def etl_data(server):
     result, data = server.uid('search', None, searchQuery)
     message_list = data[0].split()
     i = len(message_list)
-    print(f'{i} new messages: {message_list}')
+    print(f'{i} new messages found')
 
     # Fetch Envelope data which contains date received
     for x in range(i):
@@ -62,33 +62,33 @@ def etl_data(server):
         # converts byte literal to string removing b''
         raw_email_string = raw_email.decode('utf-8')
         email_message = email.message_from_string(raw_email_string)
-        print(email_message)
+        #print(email_message)
         email_date = datetime.datetime.strptime(email_message._headers[7][1][5:], '%d %b %Y %X %z')
 
         # output list
-        output_fields = [] 
+        output_fields = [None]*5
         # fetch text content
         split_text = email_message._payload.split(";")
         # Input format is expected to be
         # CAD;Address;City;Text Desc;OPS;PDC
 
-        output_fields[0] = re.sub(extraneous_chars, split_text[0])
-        output_fields[1] = re.sub(extraneous_chars, split_text[1])
-        output_fields[2] = re.sub(extraneous_chars, split_text[2])
+        output_fields[0] = re.sub(extraneous_chars, '', split_text[0])
+        output_fields[1] = re.sub(extraneous_chars, '', split_text[1])
+        output_fields[2] = re.sub(extraneous_chars, '', split_text[2])
         textDescription = "UNKNOWN/UNSPECIFIED"
         try:
             if re.match(PDC_code, split_text[5]):
-                PDC_match = re.split(r'[A-Z]',maxsplit=1)
-                textDescription = PDC_lookup[PDC_match]
+                PDC_match = re.split(r'[A-Z]',  split_text[5], maxsplit=1)
+                textDescription = PDC_lookup.PDC[int(PDC_match[0])]
             elif re.match(OPS_code, split_text[5]):
                 if split_text[5] is "OPS1":
                     textDescription = "EMS"
                 elif split_text[5] is "OPS2":
                     textDescription = "FIRE"            
-        except IndexError, KeyError:
-            textDescription = re.sub(extraneous_chars, split_text[3])
-        output_fields[3] = textDescription
-        output_fields[4] = email_date
+        except (IndexError, KeyError):
+            textDescription = re.sub(extraneous_chars, '', split_text[3])
+        output_fields[3] = textDescription.upper()
+        output_fields[4] = datetime.datetime.strftime(email_date, '%Y-%m-%d %H:%M')
 
         # Convert item to string
         output_string = str(output_fields)
