@@ -1,16 +1,15 @@
-# Priority Dispatch Codes https://wiki.radioreference.com/index.php/Priority_Dispatch_Codes
-#
+# Priority Dispatch Codes
 PDC = {
-    0: "Unknown",
-    1: "Abdominal Pain/Problems",
-    2: "Allergies/Envenomations",
-    3: "Animal Bites/Attacks",
-    4: "Assault/Sexual Assault",
-    5: "Back Pain",
-    6: "Breathing Problems",
-    7: "Burns",
-    8: "Carbon Monoxide/Inhalation/HAZMAT/CBRN",
-    9: "Cardiac or Respiratory Arrest/Death",
+    0:  "Unknown",
+    1:  "Abdominal Pain/Problems",
+    2:  "Allergies/Envenomations",
+    3:  "Animal Bites/Attacks",
+    4:  "Assault/Sexual Assault",
+    5:  "Back Pain",
+    6:  "Breathing Problems",
+    7:  "Burns",
+    8:  "Carbon Monoxide/Inhalation/HAZMAT/CBRN",
+    9:  "Cardiac or Respiratory Arrest/Death",
     10: "Chest Pain (Non-Traumatic)",
     11: "Choking",
     12: "Convulsions/Seizures",
@@ -52,12 +51,14 @@ PDC = {
     65: "Mutual Aid/Assist Outside Agency",
     66: "Odor/Unknown",
     67: "Outside Fire",
-    68: "Smoke Investigation - Outside",
+    68: "Smoke Investigation",
     69: "Structure Fire",
     70: "Train and Rail Collision/Derailment",
     71: "Vehicle Fire",
     72: "Water Rescue",
     73: "Watercraft in Distress",
     74: "Suspicious Package",
-    75: "Train and Rail Fire"
+    75: "Train and Rail Fire",
+    76: "Bomb Threat",
+    77: "Motor Vehicle Collision"
 }

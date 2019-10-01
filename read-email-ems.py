@@ -2,7 +2,7 @@
 import imaplib
 import email
 import secrets, filename_secrets
-# import PDC_lookup
+import PDC_lookup
 import pathlib
 import os, csv, re, datetime, traceback, datetime, ssl
 import pandas as pd
@@ -13,6 +13,7 @@ import logging
 OPS_code = re.compile(r'OPS\d')
 PDC_code = re.compile(r'\d{1,3}[A-Z]{1}\d{1,2}')
 extraneous_chars = re.compile(r"(b'|=|\\r|\\n|'|\"|\[|\]|\\|\r\n|CAD:)")
+ems_match = re.compile(r"(SICK|INJU|FAINT|UNCON)")
 
 # Function to login to IMAP
 def IMAP_login():
@@ -75,22 +76,41 @@ def etl_data(server):
         output_fields[0] = re.sub(extraneous_chars, '', split_text[0])
         output_fields[1] = re.sub(extraneous_chars, '', split_text[1])
         output_fields[2] = re.sub(extraneous_chars, '', split_text[2])
+       
         textDescription = "UNKNOWN/UNSPECIFIED"
         try:
-            if re.match(PDC_code, split_text[5]):
-                PDC_match = re.split(r'[A-Z]',  split_text[5], maxsplit=1)
-                if int(PDC_match[0]) > 0 and int(PDC_match[0]) < 50:
+            if len(split_text) < 5:
+                # no codes
+                if re.match(ems_match, split_text[3]):
                     textDescription = "EMS"
-                elif int(PDC_match[0]) > 50 and int(PDC_match[0]) < 100:
-                    textDescription = "FIRE"
+                else:
+                    textDescription = re.sub(extraneous_chars, '', split_text[3])
+
+            if len(split_text) > 4:
+                # OPS code
+                split_text[4]    = re.sub(extraneous_chars, '', split_text[4])
+                if re.match(OPS_code, split_text[4]):
+                    if split_text[4] == "OPS1":
+                        textDescription = "EMS"
+                    elif split_text[4] == "OPS2":
+                        textDescription = "FIRE"     
+
+            if len(split_text) > 5:
+                # PDC 
+                split_text[5]    = re.sub(extraneous_chars, '', split_text[5])
+                if re.match(PDC_code, split_text[5]):
+                    PDC_match = re.split(r'[A-Z]',  split_text[5], maxsplit=1)
+                    if int(PDC_match[0]) > 0 and int(PDC_match[0]) < 50:
+                        textDescription = "EMS"
+                    elif int(PDC_match[0]) > 50 and int(PDC_match[0]) < 100:
+                        textDescription = PDC_lookup.PDC[int(PDC_match[0])]
+                        #textDescription = "FIRE"
+                        #textDescription = re.sub(extraneous_chars, '', split_text[3])
                     elif int(PDC_match[0]) > 100:
-                        textDescription = "Police"
-                #textDescription = PDC_lookup.PDC[int(PDC_match[0])]
-            elif re.match(OPS_code, split_text[5]):
-                if split_text[5] is "OPS1":
-                    textDescription = "EMS"
-                elif split_text[5] is "OPS2":
-                    textDescription = "FIRE"            
+                        textDescription = "POLICE"
+                        #textDescription = re.sub(extraneous_chars, '', split_text[3])
+                    #textDescription = PDC_lookup.PDC[int(PDC_match[0])]
+    
         except (IndexError, KeyError):
             textDescription = re.sub(extraneous_chars, '', split_text[3])
         output_fields[3] = textDescription.upper()
