@@ -2,7 +2,7 @@
 import imaplib
 import email
 import secrets, filename_secrets
-import PDC_lookup
+# import PDC_lookup
 import pathlib
 import os, csv, re, datetime, traceback, datetime, ssl
 import pandas as pd
@@ -79,7 +79,13 @@ def etl_data(server):
         try:
             if re.match(PDC_code, split_text[5]):
                 PDC_match = re.split(r'[A-Z]',  split_text[5], maxsplit=1)
-                textDescription = PDC_lookup.PDC[int(PDC_match[0])]
+                if int(PDC_match[0]) > 0 and int(PDC_match[0]) < 50:
+                    textDescription = "EMS"
+                elif int(PDC_match[0]) > 50 and int(PDC_match[0]) < 100:
+                    textDescription = "FIRE"
+                    elif int(PDC_match[0]) > 100:
+                        textDescription = "Police"
+                #textDescription = PDC_lookup.PDC[int(PDC_match[0])]
             elif re.match(OPS_code, split_text[5]):
                 if split_text[5] is "OPS1":
                     textDescription = "EMS"
