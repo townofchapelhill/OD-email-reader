@@ -26,12 +26,9 @@ sorts and dedups a csv file. Input, Output, and sort field specified as paramete
 #### read-email.py (deprecated)
 #### read-email-ems.py
 reads emails from INBOX of odsuser
-
 retrieve EMS records forwarded via twitter 
 
-creates .../fire_dept_raw_dispatches.csv by parsing emails
-
-creates .../fire_dept_dispatches_clean.csv as a cleanup phase
+creates .../fire_dept_dispatches.csv by parsing emails
 
 #### save-email-attachment.py
 reads emails from INBOX/Self-Check of the opendata user
