@@ -77,6 +77,10 @@ def etl_data(server):
         split_text = email_message._payload.split(";")
         # Input format is expected to be
         # CAD;Address;City;Text Desc;OPS;PDC
+        if len(split_text) < 4:
+            # if we don't have complete CAD record, skip to next email
+            print(f'Incomplete record: {split_text}')
+            continue
         try:
             output_fields[0] = re.sub(extraneous_chars, '', split_text[0])
             output_fields[1] = re.sub(extraneous_chars, '', split_text[1])
