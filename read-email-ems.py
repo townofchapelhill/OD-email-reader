@@ -12,6 +12,7 @@ import os, csv, re, datetime, traceback, datetime
 
 # Search Parameters
 OPS_code = re.compile(r'OPS\d')
+CAD_code = re.compile(r'CAD:\d{6,10}')
 PDC_code = re.compile(r'\d{1,3}[A-Z]{1}\d{1,2}')
 extraneous_chars = re.compile(r"(b'|=|\\r|\\n|'|\"|\[|\]|\\|\r\n|CAD:)")
 ems_match = re.compile(r"(SICK|INJU|FAINT|UNCON)")
@@ -77,6 +78,10 @@ def etl_data(server):
         split_text = email_message._payload.split(";")
         # Input format is expected to be
         # CAD;Address;City;Text Desc;OPS;PDC
+        if not re.match(CAD_code, split_text[0]):
+            # Record is invalid if not started with a CAD code
+            print(f'Incomplete record: {split_text}')
+            continue
         if len(split_text) < 4:
             # if we don't have complete CAD record, skip to next email
             print(f'Incomplete record: {split_text}')
