@@ -15,13 +15,15 @@ OPS_code = re.compile(r'OPS\d')
 CAD_code = re.compile(r'CAD:\d{6,10}')
 PDC_code = re.compile(r'\d{1,3}[A-Z]{1}\d{1,2}')
 extraneous_chars = re.compile(r"(b'|=|\\r|\\n|'|\"|\[|\]|\\|\r\n|CAD:)")
-ems_match = re.compile(r"(SICK|INJU|FAINT|UNCON)")
+ems_match = re.compile(r"(SICK|INJU|FAINT|UNCON|PAIN|HEART|OVERDOSE)")
 
 # Function to login to IMAP
 def IMAP_login():
 
     # Connect to imap server and start tls
-    imapserver = imaplib.IMAP4(host=secrets.townIMAPServer,port=143)
+    #imapserver = imaplib.IMAP4(host=secrets.townIMAPServer,port=143)
+    imapserver = imaplib.IMAP4(host=secrets.townIMAPServer2,port=143)
+
     imapserver.starttls()
     print("Connecting...")
     try:
@@ -50,7 +52,7 @@ def etl_data(server):
     # Selects inbox as target
     server.select(mailbox='Inbox')
     # Select emails since yesterday
-    yesterday = datetime.date.today() - datetime.timedelta(days=7)
+    yesterday = datetime.date.today() - datetime.timedelta(days=1)
     searchQuery = '(FROM "Orange Co EMS Dispatch" SINCE "' + yesterday.strftime('%d-%b-%Y') + '")'
     # test for all emails below
     #searchQuery = '(FROM "Orange Co EMS Dispatch")'

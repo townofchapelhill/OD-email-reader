@@ -23,6 +23,9 @@ Powershell script
 #### csv_file_dedup.ps1
 sorts and dedups a csv file. Input, Output, and sort field specified as parameters
 
+#### IMAP_connection_test.py
+test connectivity to town IMAP services. Dump a trace on connection failure.
+
 #### read-email.py (deprecated)
 #### read-email-ems.py
 reads emails from INBOX of odsuser
