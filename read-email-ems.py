@@ -5,10 +5,6 @@ import secrets, filename_secrets
 import PDC_lookup
 import pathlib
 import os, csv, re, datetime, traceback, datetime
-#import ssl
-#import pandas as pd
-#from pandas.errors import ParserError
-#import logging
 
 # Search Parameters
 OPS_code = re.compile(r'OPS\d')
@@ -19,11 +15,9 @@ ems_match = re.compile(r"(SICK|INJU|FAINT|UNCON|PAIN|HEART|OVERDOSE)")
 
 # Function to login to IMAP
 def IMAP_login():
-
     # Connect to imap server and start tls
     #imapserver = imaplib.IMAP4(host=secrets.townIMAPServer,port=143)
     imapserver = imaplib.IMAP4(host=secrets.townIMAPServer2,port=143)
-
     imapserver.starttls()
     print("Connecting...")
     try:
@@ -34,29 +28,45 @@ def IMAP_login():
         raise NameError('IMAP connection Failed')
     return imapserver
 
+# Function to match PDC code
+def PDC_mapper(source, textDescription):
+    global PDC_code
+    try:
+        if re.match(PDC_code, source):
+            PDC_match = re.split(r'[A-Z]',  source, maxsplit=1)
+            if int(PDC_match[0]) > 0 and int(PDC_match[0]) < 50:
+                textDescription = "EMS"
+            elif int(PDC_match[0]) > 50 and int(PDC_match[0]) < 100:
+                textDescription = PDC_lookup.PDC[int(PDC_match[0])]
+            elif int(PDC_match[0]) > 100:
+                textDescription = "POLICE"
+    except (IndexError, KeyError):
+        textDescription = "UNKNOWN/UNSPECIFIED"
+    return textDescription
 
 # Function to fetch data from chosen mailbox folder
 def etl_data(server):
     global OPS_code, PDC_code
-
     # Create Path to staging directory
     stagingPath = pathlib.Path(filename_secrets.productionStaging)
+
     # Open csv
     outputFilename = stagingPath.joinpath('fire_dept_dispatches.csv')
     outputFile = open(outputFilename, 'a+')
     csv_header = ["CAD","Address","City","Type of Incident","Date","PDC"]
     info_sheet = csv.writer(outputFile)
+
     # If there's no header, write headers
     if os.stat(outputFilename).st_size == 0:
         info_sheet.writerow(csv_header)
     # Selects inbox as target
     server.select(mailbox='Inbox')
+
     # Select emails since yesterday
     yesterday = datetime.date.today() - datetime.timedelta(days=1)
     searchQuery = '(FROM "Orange Co EMS Dispatch" SINCE "' + yesterday.strftime('%d-%b-%Y') + '")'
     # test for all emails below
     #searchQuery = '(FROM "Orange Co EMS Dispatch")'
-
     result, data = server.uid('search', None, searchQuery)
     message_list = data[0].split()
     i = len(message_list)
@@ -68,7 +78,7 @@ def etl_data(server):
         result, email_data = server.uid('fetch', latest_email_uid, '(RFC822)')
         raw_email = email_data[0][1]
 
-        # converts byte literal to string removing b''
+       # converts byte literal to string removing b''
         raw_email_string = raw_email.decode('utf-8')
         email_message = email.message_from_string(raw_email_string)
         #print(email_message)
@@ -92,7 +102,7 @@ def etl_data(server):
             output_fields[0] = re.sub(extraneous_chars, '', split_text[0])
             output_fields[1] = re.sub(extraneous_chars, '', split_text[1])
             output_fields[2] = re.sub(extraneous_chars, '', split_text[2])
-       
+
             try:
                 textDescription = re.sub(extraneous_chars, '', split_text[3])
                 if len(split_text) < 5:
@@ -101,7 +111,6 @@ def etl_data(server):
                         textDescription = "EMS"
                     else:
                         textDescription = re.sub(extraneous_chars, '', split_text[3])
-
                 if len(split_text) > 4:
                     # OPS code
                     split_text[4]    = re.sub(extraneous_chars, '', split_text[4])
@@ -109,36 +118,27 @@ def etl_data(server):
                         if split_text[4] == "OPS1":
                             textDescription = "EMS"
                         elif split_text[4] == "OPS2":
-                            textDescription = "FIRE"     
+                            textDescription = "FIRE"
+                    elif re.match(PDC_code, split_text[4]):
+                        textDescription = PDC_mapper(split_text[4], textDescription)
 
                 if len(split_text) > 5:
                     # PDC 
                     split_text[5] = re.sub(extraneous_chars, '', split_text[5])
-                    if re.match(PDC_code, split_text[5]):
-                        output_fields[5] = split_text[5]
-                        PDC_match = re.split(r'[A-Z]',  split_text[5], maxsplit=1)
-                        if int(PDC_match[0]) > 0 and int(PDC_match[0]) < 50:
-                            textDescription = "EMS"
-                        elif int(PDC_match[0]) > 50 and int(PDC_match[0]) < 100:
-                            textDescription = PDC_lookup.PDC[int(PDC_match[0])]
-                            #textDescription = "FIRE"
-                            #textDescription = re.sub(extraneous_chars, '', split_text[3])
-                        elif int(PDC_match[0]) > 100:
-                            textDescription = "POLICE"
-                            #textDescription = re.sub(extraneous_chars, '', split_text[3])
-                        #textDescription = PDC_lookup.PDC[int(PDC_match[0])]
-        
+                    textDescription = PDC_mapper(split_text[5], textDescription)        
+
             except (IndexError, KeyError):
                 textDescription = "UNKNOWN/UNSPECIFIED"
+                
             output_fields[3] = textDescription.upper()
-            output_fields[4] = datetime.datetime.strftime(email_date, '%Y-%m-%d %H:%M')
-            
+            output_fields[4] = datetime.datetime.strftime(email_date, '%Y-%m-%d %H:%M')            
             #output_string = str(output_fields)
             # Clean string up and write data to csv
             print(output_fields)
             info_sheet.writerow(output_fields)
         except IndexError:
             pass
+
     # Close CSV
     outputFile.close()
     server.logout()
